@@ -91,6 +91,28 @@ func GetToolSchemas() []Tool {
 			},
 		},
 		{
+			Name:        "browser_scroll",
+			Description: "Scroll the page. Use direction ('up'/'down') for simple scrolling, or selector to scroll an element into view.",
+			InputSchema: map[string]interface{}{
+				"type": "object",
+				"properties": map[string]interface{}{
+					"direction": map[string]interface{}{
+						"type":        "string",
+						"description": "Scroll direction: 'up' or 'down'",
+						"enum":        []string{"up", "down"},
+					},
+					"selector": map[string]interface{}{
+						"type":        "string",
+						"description": "CSS selector for element to scroll into view",
+					},
+					"pixels": map[string]interface{}{
+						"type":        "number",
+						"description": "Number of pixels to scroll (default: 300 for direction scrolling)",
+					},
+				},
+			},
+		},
+		{
 			Name:        "browser_quit",
 			Description: "Close the browser session",
 			InputSchema: map[string]interface{}{

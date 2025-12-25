@@ -45,6 +45,8 @@ func (h *Handlers) Call(name string, args map[string]interface{}) (*ToolsCallRes
 		return h.browserScreenshot(args)
 	case "browser_find":
 		return h.browserFind(args)
+	case "browser_scroll":
+		return h.browserScroll(args)
 	case "browser_quit":
 		return h.browserQuit(args)
 	default:
@@ -263,6 +265,60 @@ func (h *Handlers) browserFind(args map[string]interface{}) (*ToolsCallResult, e
 				info.Tag, info.Text, info.Box.X, info.Box.Y, info.Box.Width, info.Box.Height),
 		}},
 	}, nil
+}
+
+// browserScroll scrolls the page by direction or to an element.
+func (h *Handlers) browserScroll(args map[string]interface{}) (*ToolsCallResult, error) {
+	if err := h.ensureBrowser(); err != nil {
+		return nil, err
+	}
+
+	// Option 1: Scroll to element by selector
+	if selector, ok := args["selector"].(string); ok && selector != "" {
+		js := fmt.Sprintf(`document.querySelector(%q)?.scrollIntoView({behavior: 'instant', block: 'center'})`, selector)
+		_, err := h.client.Evaluate("", js)
+		if err != nil {
+			return nil, fmt.Errorf("failed to scroll to element: %w", err)
+		}
+		return &ToolsCallResult{
+			Content: []Content{{
+				Type: "text",
+				Text: fmt.Sprintf("Scrolled to element: %s", selector),
+			}},
+		}, nil
+	}
+
+	// Option 2: Scroll by direction
+	if direction, ok := args["direction"].(string); ok && direction != "" {
+		pixels := 300.0 // default scroll amount
+		if p, ok := args["pixels"].(float64); ok && p > 0 {
+			pixels = p
+		}
+
+		var scrollY float64
+		switch direction {
+		case "down":
+			scrollY = pixels
+		case "up":
+			scrollY = -pixels
+		default:
+			return nil, fmt.Errorf("invalid direction: %s (use 'up' or 'down')", direction)
+		}
+
+		js := fmt.Sprintf(`window.scrollBy(0, %v)`, scrollY)
+		_, err := h.client.Evaluate("", js)
+		if err != nil {
+			return nil, fmt.Errorf("failed to scroll: %w", err)
+		}
+		return &ToolsCallResult{
+			Content: []Content{{
+				Type: "text",
+				Text: fmt.Sprintf("Scrolled %s by %.0f pixels", direction, pixels),
+			}},
+		}, nil
+	}
+
+	return nil, fmt.Errorf("provide either 'selector' to scroll to an element, or 'direction' ('up'/'down') to scroll the page")
 }
 
 // browserQuit closes the browser session.
