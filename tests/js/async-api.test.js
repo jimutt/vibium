@@ -119,4 +119,59 @@ describe('JS Async API', () => {
       await vibe.quit();
     }
   });
+
+  test('vibe.scroll.down() scrolls page down', async () => {
+    const vibe = await browser.launch({ headless: true });
+    try {
+      await vibe.go('https://the-internet.herokuapp.com/');
+
+      // Get initial scroll position
+      const initialY = await vibe.evaluate('return window.scrollY');
+
+      // Scroll down
+      await vibe.scroll.down();
+
+      // Check scroll position changed
+      const newY = await vibe.evaluate('return window.scrollY');
+      assert.ok(newY > initialY, 'Should have scrolled down');
+    } finally {
+      await vibe.quit();
+    }
+  });
+
+  test('vibe.scroll.up() scrolls page up', async () => {
+    const vibe = await browser.launch({ headless: true });
+    try {
+      await vibe.go('https://the-internet.herokuapp.com/');
+
+      // Scroll down first
+      await vibe.scroll.down({ pixels: 500 });
+      const midY = await vibe.evaluate('return window.scrollY');
+
+      // Scroll up
+      await vibe.scroll.up();
+
+      // Check scroll position changed
+      const newY = await vibe.evaluate('return window.scrollY');
+      assert.ok(newY < midY, 'Should have scrolled up');
+    } finally {
+      await vibe.quit();
+    }
+  });
+
+  test('vibe.scroll.toElement() scrolls element into view', async () => {
+    const vibe = await browser.launch({ headless: true });
+    try {
+      await vibe.go('https://the-internet.herokuapp.com/');
+
+      // Scroll to footer (at bottom of page)
+      await vibe.scroll.toElement('div#page-footer');
+
+      // Verify we scrolled (page should not be at top)
+      const scrollY = await vibe.evaluate('return window.scrollY');
+      assert.ok(scrollY > 0, 'Should have scrolled to element');
+    } finally {
+      await vibe.quit();
+    }
+  });
 });
