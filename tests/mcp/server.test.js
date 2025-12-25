@@ -127,12 +127,12 @@ describe('MCP Server: Protocol', () => {
     assert.ok(response.result.capabilities.tools, 'Should have tools capability');
   });
 
-  test('tools/list returns all 7 browser tools', async () => {
+  test('tools/list returns all 8 browser tools', async () => {
     const response = await client.call('tools/list', {});
 
     assert.ok(response.result, 'Should have result');
     assert.ok(response.result.tools, 'Should have tools array');
-    assert.strictEqual(response.result.tools.length, 7, 'Should have 7 tools');
+    assert.strictEqual(response.result.tools.length, 8, 'Should have 8 tools');
 
     const toolNames = response.result.tools.map(t => t.name);
     assert.ok(toolNames.includes('browser_launch'), 'Should have browser_launch');
@@ -141,6 +141,7 @@ describe('MCP Server: Protocol', () => {
     assert.ok(toolNames.includes('browser_type'), 'Should have browser_type');
     assert.ok(toolNames.includes('browser_screenshot'), 'Should have browser_screenshot');
     assert.ok(toolNames.includes('browser_find'), 'Should have browser_find');
+    assert.ok(toolNames.includes('browser_scroll'), 'Should have browser_scroll');
     assert.ok(toolNames.includes('browser_quit'), 'Should have browser_quit');
   });
 
@@ -258,6 +259,64 @@ describe('MCP Server: Browser Tools', () => {
       response.result.content[0].text.includes('Clicked'),
       'Should confirm click'
     );
+  });
+
+  test('browser_scroll scrolls down by direction', async () => {
+    // Navigate to a page first
+    await client.call('tools/call', {
+      name: 'browser_navigate',
+      arguments: { url: 'https://example.com' },
+    });
+
+    const response = await client.call('tools/call', {
+      name: 'browser_scroll',
+      arguments: { direction: 'down' },
+    });
+
+    assert.ok(response.result, 'Should have result');
+    assert.ok(!response.result.isError, 'Should not be an error');
+    assert.ok(
+      response.result.content[0].text.includes('Scrolled down'),
+      'Should confirm scroll down'
+    );
+  });
+
+  test('browser_scroll scrolls up by direction', async () => {
+    const response = await client.call('tools/call', {
+      name: 'browser_scroll',
+      arguments: { direction: 'up', pixels: 100 },
+    });
+
+    assert.ok(response.result, 'Should have result');
+    assert.ok(!response.result.isError, 'Should not be an error');
+    assert.ok(
+      response.result.content[0].text.includes('Scrolled up'),
+      'Should confirm scroll up'
+    );
+  });
+
+  test('browser_scroll scrolls to element by selector', async () => {
+    const response = await client.call('tools/call', {
+      name: 'browser_scroll',
+      arguments: { selector: 'h1' },
+    });
+
+    assert.ok(response.result, 'Should have result');
+    assert.ok(!response.result.isError, 'Should not be an error');
+    assert.ok(
+      response.result.content[0].text.includes('Scrolled to element'),
+      'Should confirm scroll to element'
+    );
+  });
+
+  test('browser_scroll without arguments returns error', async () => {
+    const response = await client.call('tools/call', {
+      name: 'browser_scroll',
+      arguments: {},
+    });
+
+    assert.ok(response.result, 'Should have result');
+    assert.strictEqual(response.result.isError, true, 'Should be an error');
   });
 
   test('browser_quit closes session', async () => {
