@@ -19,14 +19,47 @@ interface VibiumFindResult {
   };
 }
 
+export interface ScrollOptions {
+  /** Number of pixels to scroll. Default: 300 */
+  pixels?: number;
+}
+
 export class Vibe {
   private client: BiDiClient;
   private process: ClickerProcess | null;
   private context: string | null = null;
 
+  /** Scroll methods for page navigation */
+  public readonly scroll: {
+    /** Scroll down by pixels (default: 300) */
+    down: (options?: ScrollOptions) => Promise<void>;
+    /** Scroll up by pixels (default: 300) */
+    up: (options?: ScrollOptions) => Promise<void>;
+    /** Scroll an element into view */
+    toElement: (selector: string) => Promise<void>;
+  };
+
   constructor(client: BiDiClient, process: ClickerProcess | null) {
     this.client = client;
     this.process = process;
+
+    // Initialize scroll methods bound to this instance
+    this.scroll = {
+      down: async (options?: ScrollOptions) => {
+        const pixels = options?.pixels ?? 300;
+        debug('scrolling down', { pixels });
+        await this.evaluate(`window.scrollBy(0, ${pixels})`);
+      },
+      up: async (options?: ScrollOptions) => {
+        const pixels = options?.pixels ?? 300;
+        debug('scrolling up', { pixels });
+        await this.evaluate(`window.scrollBy(0, -${pixels})`);
+      },
+      toElement: async (selector: string) => {
+        debug('scrolling to element', { selector });
+        await this.evaluate(`document.querySelector(${JSON.stringify(selector)})?.scrollIntoView({behavior: 'instant', block: 'center'})`);
+      },
+    };
   }
 
   private async getContext(): Promise<string> {

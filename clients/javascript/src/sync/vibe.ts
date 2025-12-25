@@ -1,13 +1,38 @@
 import { SyncBridge } from './bridge';
 import { ElementSync } from './element';
 import { ElementInfo } from '../element';
-import { FindOptions } from '../vibe';
+import { FindOptions, ScrollOptions } from '../vibe';
 
 export class VibeSync {
   private bridge: SyncBridge;
 
+  /** Scroll methods for page navigation */
+  public readonly scroll: {
+    /** Scroll down by pixels (default: 300) */
+    down: (options?: ScrollOptions) => void;
+    /** Scroll up by pixels (default: 300) */
+    up: (options?: ScrollOptions) => void;
+    /** Scroll an element into view */
+    toElement: (selector: string) => void;
+  };
+
   constructor(bridge: SyncBridge) {
     this.bridge = bridge;
+
+    // Initialize scroll methods bound to this instance
+    this.scroll = {
+      down: (options?: ScrollOptions) => {
+        const pixels = options?.pixels ?? 300;
+        this.evaluate(`window.scrollBy(0, ${pixels})`);
+      },
+      up: (options?: ScrollOptions) => {
+        const pixels = options?.pixels ?? 300;
+        this.evaluate(`window.scrollBy(0, -${pixels})`);
+      },
+      toElement: (selector: string) => {
+        this.evaluate(`document.querySelector(${JSON.stringify(selector)})?.scrollIntoView({behavior: 'instant', block: 'center'})`);
+      },
+    };
   }
 
   go(url: string): void {
